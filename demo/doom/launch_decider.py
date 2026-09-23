@@ -53,14 +53,37 @@ def wait_ready(process, url, model, timeout=1800):
     raise RuntimeError("Server startup timed out; see the server log.")
 
 
-def stop(process):
+def stop(process, timeout=5):
     if process.poll() is None:
         process.terminate()
         try:
-            process.wait(timeout=15)
+            process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait()
+
+
+def install_shutdown_handlers():
+    def interrupted(signum, frame):
+        # Terminals and uv can both forward interrupts. Finish cleanup even if
+        # another signal arrives while waiting for a child to stop.
+        for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+            signal.signal(sig, signal.SIG_IGN)
+        print("\nStopping demo and local server...", flush=True)
+        raise KeyboardInterrupt
+    for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, interrupted)
+
+
+def check_port(port):
+    with socket.socket() as probe:
+        # Match the server's reuse policy: TIME_WAIT is not a running server.
+        probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            probe.bind(("127.0.0.1", port))
+            probe.listen(1)
+        except OSError:
+            raise RuntimeError(f"Port {port} is unavailable. Stop any server using it or select --port.") from None
 
 
 def download_model(model, revision):
@@ -81,11 +104,7 @@ def download_model(model, revision):
 def run(args):
     cache = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "decider-doom"
     with single_instance(cache / "launcher.lock"):
-        with socket.socket() as probe:
-            try:
-                probe.bind(("127.0.0.1", args.port))
-            except OSError:
-                raise RuntimeError(f"Port {args.port} is occupied. Stop that server or select --port.") from None
+        check_port(args.port)
         model, revision = MODELS[args.model]
         seed = args.seed if args.seed is not None else secrets.randbelow(2**31)
         url = f"http://127.0.0.1:{args.port}"
@@ -133,9 +152,7 @@ def main():
         parser.error("Apple Silicon macOS is required")
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         parser.error("Run this command in an interactive terminal")
-    def interrupted(signum, frame):
-        raise KeyboardInterrupt
-    signal.signal(signal.SIGTERM, interrupted)
+    install_shutdown_handlers()
     try:
         return run(args)
     except KeyboardInterrupt:

@@ -25,6 +25,9 @@ git clone https://github.com/edbordin-linktree/decider-jev-doom-demo.git && cd d
 The launcher installs dependencies from a locked uv project, downloads the public
 2B model, starts the local Decider HTTP server, and opens the terminal demo.
 Press **q** to quit; the launcher also stops its server.
+Ctrl+C also stops the demo and server. Wait for the shutdown message to finish
+and your shell prompt to return; an unresponsive child is force-stopped after
+five seconds. Repeated Ctrl+C presses do not interrupt cleanup.
 
 The first run downloads Python dependencies and a **3.51 GiB model**. Later runs
 reuse the Hugging Face cache. Download progress appears directly in the terminal,

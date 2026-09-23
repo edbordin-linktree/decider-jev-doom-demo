@@ -47,6 +47,81 @@ def test_stop_escalates_only_owned_process():
     process.kill.assert_called_once()
 
 
+def test_port_check_rejects_listener_but_allows_recently_closed_connection():
+    import socket
+    with socket.socket() as server:
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("127.0.0.1", 0))
+        port = server.getsockname()[1]
+        server.listen(1)
+        with pytest.raises(RuntimeError, match="unavailable"):
+            launcher.check_port(port)
+        with socket.create_connection(("127.0.0.1", port)) as client:
+            connection, _ = server.accept()
+            connection.close()  # Active close leaves a server-side TIME_WAIT socket.
+            assert client.recv(1) == b""
+    launcher.check_port(port)
+
+
+@pytest.mark.parametrize("first_signal", ["SIGINT", "SIGHUP"])
+def test_repeated_signals_cannot_orphan_stubborn_server(first_signal):
+    import os
+    import select
+    import signal
+    import subprocess
+    import sys
+
+    # Real child processes and a real listener, but no model or MLX imports.
+    server_code = (
+        "import signal,socket,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); "
+        "s=socket.socket(); s.bind(('127.0.0.1',0)); s.listen(1); "
+        "print(s.getsockname()[1],flush=True); time.sleep(60)"
+    )
+    supervisor_code = f'''
+import subprocess,sys,time
+import launch_decider as launcher
+server=subprocess.Popen([sys.executable,"-u","-c",{server_code!r}],
+    stdout=subprocess.PIPE,text=True,start_new_session=True)
+try:
+    port=server.stdout.readline().strip()
+    launcher.install_shutdown_handlers()
+    print("READY",server.pid,port,flush=True)
+    time.sleep(60)
+except KeyboardInterrupt:
+    pass
+finally:
+    launcher.stop(server,timeout=0.5)
+'''
+    supervisor = subprocess.Popen([sys.executable, "-u", "-c", supervisor_code],
+        cwd=launcher.HERE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    server_pid = None
+    try:
+        assert select.select([supervisor.stdout], [], [], 10)[0], "Supervisor did not become ready"
+        ready = supervisor.stdout.readline().split()
+        assert ready[0] == "READY"
+        server_pid, port = map(int, ready[1:])
+        supervisor.send_signal(getattr(signal, first_signal))
+        assert select.select([supervisor.stdout], [], [], 5)[0]
+        # Wait for the shutdown handler to disable repeated signals.
+        assert "Stopping demo" in supervisor.stdout.read(1) + supervisor.stdout.readline()
+        for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+            supervisor.send_signal(sig)
+        _, error = supervisor.communicate(timeout=5)
+        assert supervisor.returncode == 0, error
+        with pytest.raises(ProcessLookupError):
+            os.kill(server_pid, 0)
+        launcher.check_port(port)
+    finally:
+        if supervisor.poll() is None:
+            supervisor.kill()
+            supervisor.wait()
+        if server_pid is not None:
+            try:
+                os.kill(server_pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+
 @pytest.mark.parametrize("startup_error", [False, True])
 @pytest.mark.parametrize("seed", [None, 0, 37])
 @pytest.mark.parametrize("prompt", ["criteria", "range"])
