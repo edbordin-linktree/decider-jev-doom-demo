@@ -12,7 +12,7 @@ def test_real_game_feedback():
     doom = Doom('defend_the_center', seed=37)
     try:
         doom.new_episode()
-        initial = state_dict(doom.snapshot(), None)
+        initial = state_dict(doom.snapshot(), None, include_feedback=True)
         assert initial['ammo_used'] == 0
         assert initial['last_turn_degrees'] == 0
         doom.step('turn left', 5)

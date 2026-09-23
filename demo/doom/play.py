@@ -80,7 +80,7 @@ def pick(decision: Decision, temperature: float) -> str:
 def decide(client: Client, api: str, snap, doom: Doom, last: str | None, prompt: str = 'original') -> Decision:
     if api == "score":
         return client.decide_score(describe(snap, doom.goal, doom.rules, doom.examples, last), doom.actions)
-    state = state_dict(snap, last)
+    state = state_dict(snap, last, include_feedback=prompt == 'range')
     question = {'type': 'choice', 'instructions': instructions(doom.goal, doom.rules, doom.examples),
                 'criteria': {a: ACTION_HELP[a] for a in doom.actions}}
     if prompt != 'original':

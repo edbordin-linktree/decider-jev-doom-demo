@@ -94,9 +94,9 @@ def describe(snap: Snapshot, goal: str, rules: list[str], examples: list[tuple[s
     return "\n".join(lines)
 
 
-def state_dict(snap: Snapshot, last_action: str | None) -> dict:
+def state_dict(snap: Snapshot, last_action: str | None, *, include_feedback: bool = False) -> dict:
     """Structured version of the same observation, for the System One `state` field."""
-    return {
+    state = {
         "monsters": [{"kind": name(t), "position": where(t.cx), "range": how_far(t.size)}
                      for t in snap.things if t.kind == "monster"][:4],
         "items": [{"kind": name(t), "position": where(t.cx), "range": how_far(t.size)}
@@ -105,10 +105,11 @@ def state_dict(snap: Snapshot, last_action: str | None) -> dict:
                   "right": depth_words(snap.depth_right)},
         "health": snap.health, "ammo": snap.ammo, "kills": snap.kills,
         "last_action": last_action,
-        "weapon_ready": snap.weapon_ready,
-        "ammo_used": snap.ammo_used,
-        "last_turn_degrees": snap.last_turn_degrees,
     }
+    if include_feedback:
+        state.update(weapon_ready=snap.weapon_ready, ammo_used=snap.ammo_used,
+                     last_turn_degrees=snap.last_turn_degrees)
+    return state
 
 
 def instructions(goal: str, rules: list[str], examples: list[tuple[str, str]]) -> str:

@@ -49,6 +49,18 @@ not raw pixels. We replaced the original long instructions/examples with a plain
 question and described options, matching Decider's typed-question interface.
 The default `criteria` prompt says:
 
+> Which action best matches the current visible monsters? Use their positions, not last_action.
+
+Its attack option is: "A visible monster is dead center, in the crosshair. Shoot it."
+The default restores the earlier observation format without weapon or turn
+feedback. Download progress, shutdown fixes and random seeds are unchanged.
+
+### Nearest-by-range experiment
+
+`bash run-decider.sh --prompt range` retains the newer range-priority policy,
+weapon/turn feedback and hold-fire wording. These changes did not establish
+better play and are not enabled by default. Its feedback instruction says:
+
 > Choose the next action using enemy positions and weapon_ready. ammo_used is ammo spent during the last action. last_turn_degrees is the actual turn: positive means left, negative means right.
 
 `weapon_ready` comes from ViZDoom's attack-readiness signal. `ammo_used` is the
@@ -62,9 +74,6 @@ during cooldown. Each decision still presses attack for only the usual five tick
 the model must select attack again to keep holding it. No wait action or automatic
 continuation is added.
 
-### Nearest-by-range experiment
-
-To test explicit range priority, run `bash run-decider.sh --prompt range`.
 For a controlled comparison, use the same `--seed` with `--prompt criteria` and
 `--prompt range`. The experimental question and options are:
 

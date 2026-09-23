@@ -6,13 +6,33 @@ from client import Client
 class LocalClientTests(unittest.TestCase):
     def test_attack_describes_holding_fire_without_adding_an_action(self):
         from decider_prompt import apply_prompt
-        for variant in ('criteria', 'range'):
+        for variant in ('range',):
             body = {'state': {'weapon_ready': False}, 'questions': {'action': {'type': 'choice'}}}
             question = apply_prompt(body, variant)['questions']['action']
             self.assertEqual(list(question['criteria']), ['attack', 'turn left', 'turn right'])
             attack = question['criteria']['attack']
             self.assertIn('dead center, in the crosshair', attack)
             self.assertIn('hold fire, even while the weapon cools down', attack)
+
+    def test_default_restores_baseline_question_and_observations(self):
+        from types import SimpleNamespace
+        from unittest.mock import Mock
+        import numpy as np
+        from game import Snapshot
+        from play import decide
+        snap = Snapshot(frame=np.zeros((2, 2, 3)), health=100, ammo=10, kills=0, tic=5,
+                        weapon_ready=False, ammo_used=1, last_turn_degrees=8.8)
+        client = Mock()
+        doom = SimpleNamespace(goal='', rules=[], examples=[], actions=['attack', 'turn left', 'turn right'])
+        decide(client, 'systemone', snap, doom, 'attack', 'criteria')
+        state, instruction, criteria = client.decide_systemone.call_args.args
+        self.assertEqual(set(state), {'monsters', 'items', 'space', 'health', 'ammo', 'kills', 'last_action'})
+        self.assertEqual(instruction, 'Which action best matches the current visible monsters? Use their positions, not last_action.')
+        self.assertEqual(criteria['attack'], 'A visible monster is dead center, in the crosshair. Shoot it.')
+        decide(client, 'systemone', snap, doom, 'attack', 'range')
+        experimental = client.decide_systemone.call_args.args[0]
+        self.assertEqual(experimental['ammo_used'], 1)
+        self.assertEqual(experimental['last_turn_degrees'], 8.8)
 
     def test_range_targets_one_enemy_by_range_without_filtering_state(self):
         from decider_prompt import apply_prompt

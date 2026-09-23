@@ -21,9 +21,9 @@ def apply_prompt(body, variant='explicit'):
     question = dict(body['questions']['action'], instructions=INSTRUCTIONS)
     if variant == 'criteria':
         question = dict(question,
-            instructions=FEEDBACK,
+            instructions='Which action best matches the current visible monsters? Use their positions, not last_action.',
             criteria={
-                'attack':'A visible monster is dead center, in the crosshair. Keep aiming here and hold fire, even while the weapon cools down.',
+                'attack':'A visible monster is dead center, in the crosshair. Shoot it.',
                 'turn left':'The closest visible monster is left of center. Turn left to face it.',
                 'turn right':'No monsters are visible, or the closest visible monster is right of center. Turn right to search or face it.',
             })
