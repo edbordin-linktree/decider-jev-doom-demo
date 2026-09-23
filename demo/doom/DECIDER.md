@@ -9,7 +9,7 @@ the `defend_the_center` scenario. No API key, model export or fine-tuning is nee
 Install [uv](https://docs.astral.sh/uv/) once with `brew install uv`, then:
 
 ```sh
-git clone https://github.com/edbordin-linktree/open-jev.git && cd open-jev && bash run-decider.sh
+git clone https://github.com/edbordin-linktree/decider-jev-doom-demo.git && cd decider-jev-doom-demo && bash run-decider.sh
 ```
 
 The launcher uses a dedicated uv project and committed lockfile in `demo/doom`.
