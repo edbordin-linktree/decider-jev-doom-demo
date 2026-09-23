@@ -8,6 +8,14 @@ Watch Decider 2B play Doom in your terminal, running locally on an Apple Silicon
 Mac through the ExecuTorch MLX backend. No API key, model export or fine-tuning
 is needed.
 
+## Watch the demo
+
+[![Decider 2B playing Doom with action probabilities and latency](docs/media/decider-2b-demo.gif)](https://github.com/edbordin-linktree/decider-jev-doom-demo/blob/decider-mlx/docs/media/decider-2b-demo.mp4)
+
+[Watch or download the 30-second MP4](https://github.com/edbordin-linktree/decider-jev-doom-demo/raw/refs/heads/decider-mlx/docs/media/decider-2b-demo.mp4)
+(720p, about 5 MB). Recorded with the default Decider 2B policy, seed 37,
+on an M4 Pro. Wall-clock playback includes inference pauses; no audio.
+
 ## Quick start
 
 Install [uv](https://docs.astral.sh/uv/) once:

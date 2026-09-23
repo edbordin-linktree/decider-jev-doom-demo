@@ -5,9 +5,10 @@ lets the server rank the action menu with one `/score` call (or one System One
 `choice` question). Nothing is generated: one prefill per decision, one padded
 forward pass over the menu, argmax, press the keys, repeat.
 
-![openjev playing Doom in the terminal](media/doom-recording.gif)
+[![Decider 2B playing Doom locally](media/decider-2b-demo.gif)](media/decider-2b-demo.mp4)
 
-*(Full-resolution recording: [`doom-recording.mov`](media/doom-recording.mov).)*
+[30-second Decider 2B MP4](media/decider-2b-demo.mp4). This fork's recording uses
+the Decider MLX backend; the upstream Gemma instructions below remain for reference.
 
 ```
 ViZDoom frame ──> labels + depth buffer ──> "A zombie on the left, close. ..."

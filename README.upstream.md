@@ -208,9 +208,8 @@ lets the server rank the action menu with one `/score` call (or one System One
 `choice` question). Start `make serve`, then `make doom`. Details and keys in
 [`demo/doom/README.md`](demo/doom/README.md).
 
-![openjev playing Doom in the terminal: the model ranks the action menu each step](docs/media/doom-recording.gif)
-
-Full-resolution recording: [docs/media/doom-recording.mov](docs/media/doom-recording.mov).
+The upstream recording has been removed from this fork. See the
+[current Decider demo recording](README.md#watch-the-demo); it uses a different model/backend.
 
 ## Layout
 
