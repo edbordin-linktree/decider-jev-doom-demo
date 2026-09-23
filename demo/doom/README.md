@@ -1,5 +1,8 @@
 # Doom in the terminal, openjev picks the moves
 
+For the Decider MLX backend, use the [local Decider launcher](DECIDER.md).
+The instructions below describe the original upstream Gemma backend.
+
 The [jev](https://docs.typesafe.ai) Doom example trains a byte-level scorer on
 raw frames and lets it choose the next keypress. This demo does the same loop
 with the openjev server as the backend: a plain Gemma 3 4B ranks a short menu

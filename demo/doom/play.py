@@ -77,11 +77,16 @@ def pick(decision: Decision, temperature: float) -> str:
     return random.choices(acts, weights=w, k=1)[0]
 
 
-def decide(client: Client, api: str, snap, doom: Doom, last: str | None) -> Decision:
+def decide(client: Client, api: str, snap, doom: Doom, last: str | None, prompt: str = 'original') -> Decision:
     if api == "score":
         return client.decide_score(describe(snap, doom.goal, doom.rules, doom.examples, last), doom.actions)
-    return client.decide_systemone(state_dict(snap, last), instructions(doom.goal, doom.rules, doom.examples),
-                                   {a: ACTION_HELP[a] for a in doom.actions})
+    state = state_dict(snap, last)
+    question = {'type': 'choice', 'instructions': instructions(doom.goal, doom.rules, doom.examples),
+                'criteria': {a: ACTION_HELP[a] for a in doom.actions}}
+    if prompt != 'original':
+        from decider_prompt import apply_prompt
+        question = apply_prompt({'state': state, 'questions': {'action': question}}, prompt)['questions']['action']
+    return client.decide_systemone(state, question['instructions'], question['criteria'])
 
 
 def panel_lines(args, snap, decision: Decision | None, chosen: str | None, source: str, mode: str,
@@ -119,6 +124,9 @@ def main() -> None:
     ap.add_argument("--api", default="score", choices=["score", "systemone"],
                     help="score: native /score endpoint. systemone: TypeSafe /v1/systemone choice question")
     ap.add_argument("--api-key", default=None, help="bearer token for /v1/systemone (default: $OPENJEV_API_KEY)")
+    ap.add_argument("--model", default=None, help="model identifier for /v1/systemone")
+    ap.add_argument("--prompt", choices=["original", "criteria", "plain"], default="original",
+                    help="optional defend_the_center question/option wording; state is unchanged")
     ap.add_argument("--norm", default="mean", choices=["mean", "sum", "pmi"], help="/score normalisation")
     ap.add_argument("--frame-skip", type=int, default=5, help="game tics each chosen action is held for")
     ap.add_argument("--temperature", type=float, default=0.0, help="0 = argmax; >0 samples from the option probabilities")
@@ -130,13 +138,15 @@ def main() -> None:
     ap.add_argument("--wad", default=None, help="path to a real IWAD (doom2.wad, doom.wad); default is the bundled freedoom2.wad")
     ap.add_argument("--map", default=None, help="map to load with --scenario level, e.g. map01 (Doom II) or e1m1 (Doom)")
     args = ap.parse_args()
+    if args.prompt != 'original' and (args.api != 'systemone' or args.scenario != 'defend_the_center' or args.wad or args.map):
+        ap.error('prompt variants require --api systemone --scenario defend_the_center')
 
-    client = Client(args.url, api=args.api, api_key=args.api_key, norm=args.norm)
+    client = Client(args.url, api=args.api, api_key=args.api_key, norm=args.norm, model=args.model)
     try:
         h = client.health()
     except ServerDown as e:
         sys.exit(f"{e}\nStart the server first:  make serve   (or: .venv/bin/openjev serve)")
-    if not h.get("ok"):
+    if not h.get("ok", bool(h.get("model"))):
         sys.exit("server is up but the model is still loading; try again in a moment")
 
     if args.seed is not None:
@@ -181,7 +191,7 @@ def main() -> None:
                 doom_last_kills = snap.kills
 
                 try:
-                    decision = decide(client, args.api, snap, doom, last)
+                    decision = decide(client, args.api, snap, doom, last, args.prompt)
                 except ServerDown as e:
                     note = str(e)
                     break

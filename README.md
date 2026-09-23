@@ -1,5 +1,11 @@
 # openjev
 
+> **Decider MLX fork:** run the terminal Doom demo with a local Decider 2B server
+> on Apple Silicon. Install `uv` (`brew install uv`), then run `bash run-decider.sh`.
+> Dependencies and public model downloads are automatic. See
+> [setup, controls, limitations and credits](demo/doom/DECIDER.md).
+> The original Dasein Labs README continues below.
+
 One-pass option scoring with a local Gemma 3 4B on Apple silicon via MLX.
 Design notes: [docs/design/one-pass-option-scoring.md](docs/design/one-pass-option-scoring.md);
 per-task training: [docs/design/per-task-finetuning-with-gemma.md](docs/design/per-task-finetuning-with-gemma.md).

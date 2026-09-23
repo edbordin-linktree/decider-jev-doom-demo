@@ -22,11 +22,12 @@ class ServerDown(RuntimeError):
 
 
 class Client:
-    def __init__(self, url: str, api: str = "score", api_key: str | None = None, norm: str = "mean") -> None:
+    def __init__(self, url: str, api: str = "score", api_key: str | None = None, norm: str = "mean", model: str | None = None) -> None:
         self.url = url.rstrip("/")
         self.api = api
         self.api_key = api_key or os.environ.get("OPENJEV_API_KEY")
         self.norm = norm
+        self.model = model
 
     def _post(self, path: str, body: dict, timeout: float = 60.0) -> dict:
         data = json.dumps(body).encode()
@@ -64,6 +65,7 @@ class Client:
 
         t = time.perf_counter()
         res = self._post("/v1/systemone", {
+            **({"model": self.model} if self.model else {}),
             "state": state,
             "questions": {"action": {"type": "choice", "instructions": instructions, "criteria": criteria}},
         })
