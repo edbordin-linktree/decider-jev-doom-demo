@@ -41,8 +41,9 @@ def bar(p: float, width: int) -> str:
 
 
 class Screen:
-    def __init__(self) -> None:
+    def __init__(self, video=None) -> None:
         self.out = sys.stdout
+        self.video = video
         self.first = True
 
     def __enter__(self) -> "Screen":
@@ -52,8 +53,14 @@ class Screen:
     def __exit__(self, *exc) -> None:
         self.out.write(RESET + SHOW + "\n")
         self.out.flush()
+        if self.video:
+            self.video.close()
 
     def draw(self, frame: np.ndarray, panel: list[str]) -> None:
+        if self.video:
+            self.video.draw(frame, panel)
+        if not self.out.isatty():
+            return
         term = shutil.get_terminal_size((120, 40))
         panel_w = 44
         cols = max(40, min(96, term.columns - panel_w - 1))

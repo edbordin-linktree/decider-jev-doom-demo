@@ -134,10 +134,14 @@ def main() -> None:
     ap.add_argument("--max-steps", type=int, default=0, help="stop after N decision steps (0 = unlimited)")
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--record", default=None, help="append one JSON line per decision (context, options, probs, action)")
+    ap.add_argument("--video", help="Record gameplay and panel as an MP4 (never overwrites)")
+    ap.add_argument("--video-seconds", type=float, default=30, help="Wall-clock recording limit (default: 30 seconds)")
     ap.add_argument("--manual", action="store_true", help="start in manual mode (model still shows its ranking)")
     ap.add_argument("--wad", default=None, help="path to a real IWAD (doom2.wad, doom.wad); default is the bundled freedoom2.wad")
     ap.add_argument("--map", default=None, help="map to load with --scenario level, e.g. map01 (Doom II) or e1m1 (Doom)")
     args = ap.parse_args()
+    if args.video_seconds <= 0:
+        ap.error('--video-seconds must be positive')
     if args.prompt != 'original' and (args.api != 'systemone' or args.scenario != 'defend_the_center' or args.wad or args.map):
         ap.error('prompt variants require --api systemone --scenario defend_the_center')
 
@@ -148,6 +152,12 @@ def main() -> None:
         sys.exit(f"{e}\nStart the server first:  make serve   (or: .venv/bin/openjev serve)")
     if not h.get("ok", bool(h.get("model"))):
         sys.exit("server is up but the model is still loading; try again in a moment")
+
+    video = None
+    if args.video:
+        from video import VideoRecorder
+        video = VideoRecorder(args.video, args.video_seconds,
+                              label=f"{h.get('model', 'local model').rsplit('/', 1)[-1]} | seed {args.seed} | {args.prompt}")
 
     if args.seed is not None:
         random.seed(args.seed)
@@ -166,16 +176,22 @@ def main() -> None:
     note = ""
     doom.new_episode()
 
-    with Screen() as screen, Keys() as keys:
+    with Screen(video=video) as screen, Keys() as keys:
         try:
+            if video:
+                first = doom.snapshot()
+                screen.draw(first.frame, panel_lines(args, first, None, None, '', 'STARTING',
+                            episode, step, doom.total_reward, 'Waiting for first decision...'))
             while True:
+                if video and video.elapsed >= args.video_seconds:
+                    break
                 if doom.finished:
                     snap_note = f"episode {episode} over: kills {doom_last_kills}  reward {doom.total_reward:.0f}"
                     screen.draw(last_frame, panel_lines(args, last_snap, last_decision, last_chosen, "", "OVER",
                                                         episode, step, doom.total_reward, snap_note + "   (any key)"))
                     if args.episodes and episode >= args.episodes:
                         break
-                    k = keys.wait()
+                    k = '' if video and not sys.stdin.isatty() else keys.wait()
                     if k == "q":
                         break
                     episode += 1

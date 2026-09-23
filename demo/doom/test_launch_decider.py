@@ -131,7 +131,8 @@ def test_run_cleans_up_server(tmp_path, monkeypatch, startup_error, seed, prompt
     server.poll.return_value = None
     game.poll.return_value = 0
     game.wait.return_value = 0
-    args = SimpleNamespace(model="2b", port=8000, seed=seed, record=None, prompt=prompt)
+    args = SimpleNamespace(model="2b", port=8000, seed=seed, record=None, prompt=prompt,
+                           video="test.mp4", video_seconds=30)
     random_seed = Mock(return_value=12345)
     monkeypatch.setattr(launcher.secrets, "randbelow", random_seed)
     with patch.object(launcher.socket, "socket"), \
@@ -149,6 +150,8 @@ def test_run_cleans_up_server(tmp_path, monkeypatch, startup_error, seed, prompt
             assert launcher.MODELS["2b"][1] in server_command
             game_command = popen.call_args_list[1].args[0]
             assert game_command[game_command.index("--prompt") + 1] == prompt
+            assert game_command[game_command.index("--video") + 1] == "test.mp4"
+            assert game_command[game_command.index("--video-seconds") + 1] == "30"
             assert game_command[game_command.index("--seed") + 1] == str(12345 if seed is None else seed)
         server.terminate.assert_called_once()
         download.assert_called_once_with(*launcher.MODELS["2b"])

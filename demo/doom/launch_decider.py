@@ -128,6 +128,8 @@ def run(args):
                            "--api", "systemone", "--prompt", args.prompt, "--seed", str(seed)]
                 if args.record:
                     command += ["--record", args.record]
+                if args.video:
+                    command += ["--video", args.video, "--video-seconds", str(args.video_seconds)]
                 game = subprocess.Popen(command)
                 try:
                     return game.wait()
@@ -143,9 +145,15 @@ def main():
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--seed", type=int, default=None, help="Episode seed (default: random)")
     parser.add_argument("--record", help="Optional JSONL decision log")
+    parser.add_argument("--video", help="Record an MP4 of gameplay and decisions")
+    parser.add_argument("--video-seconds", type=float, default=30, help="Recording duration (default: 30 seconds)")
     parser.add_argument("--prompt", choices=["criteria", "range"], default="criteria",
                         help="Question wording: criteria (default) or experimental nearest-by-range policy")
     args = parser.parse_args()
+    if args.video_seconds <= 0:
+        parser.error('--video-seconds must be positive')
+    if args.video and Path(args.video).exists():
+        parser.error(f'Refusing to overwrite {args.video}')
     if not 1 <= args.port <= 65535:
         parser.error("port must be between 1 and 65535")
     if sys.platform != "darwin" or os.uname().machine != "arm64":

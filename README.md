@@ -75,6 +75,21 @@ The launcher prints the chosen seed; pass it with `--seed` to replay that setup.
 The side panel shows action probabilities, the selected action, HTTP decision
 latency, and the state sent to the model.
 
+## Record a video
+
+```sh
+bash run-decider.sh --video demo.mp4 --video-seconds 30
+```
+
+This saves a 30-second, 1280×720 H.264 MP4 with gameplay and the decision panel,
+then exits. Existing files are never overwritten. The encoder is included in the
+uv environment; no separate FFmpeg installation is needed.
+
+Playback follows wall-clock time, including inference waits and manual pauses.
+It records the observed frames at 20 FPS, without inventing intermediate game
+frames or speeding up decisions. Audio is not recorded. Encoding adds some local
+overhead; the displayed decision latency is still the HTTP round trip.
+
 ## If startup takes a while
 
 The first download can take several minutes; watch its progress in the launching

@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 .DS_Store
 runs/
+/*.mp4
 *.npz
 # ViZDoom writes this config into the cwd on first launch
 _vizdoom.ini
