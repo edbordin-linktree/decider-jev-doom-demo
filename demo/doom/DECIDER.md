@@ -57,6 +57,11 @@ not a general shot counter: pickups can mask consumption, and melee spends no
 ammo. Turn feedback uses measured heading changes. Both step-feedback fields
 reset each episode. No cooldown duration, automatic firing or aiming rule is added.
 
+The attack option describes holding fire on an enemy in the crosshair, including
+during cooldown. Each decision still presses attack for only the usual five ticks;
+the model must select attack again to keep holding it. No wait action or automatic
+continuation is added.
+
 ### Nearest-by-range experiment
 
 To test explicit range priority, run `bash run-decider.sh --prompt range`.
@@ -67,7 +72,7 @@ For a controlled comparison, use the same `--seed` with `--prompt criteria` and
 
 It also includes the feedback instructions above.
 
-- `attack`: The priority enemy is dead center, in the crosshair. Shoot that enemy.
+- `attack`: The priority enemy is dead center, in the crosshair. Keep aiming here and hold fire, even while the weapon cools down.
 - `turn left`: The priority enemy is left of center. Turn left to face that enemy.
 - `turn right`: The priority enemy is right of center, or no enemies are visible. Turn right to face that enemy or search.
 

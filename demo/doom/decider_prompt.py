@@ -23,7 +23,7 @@ def apply_prompt(body, variant='explicit'):
         question = dict(question,
             instructions=FEEDBACK,
             criteria={
-                'attack':'A visible monster is dead center, in the crosshair. Shoot it.',
+                'attack':'A visible monster is dead center, in the crosshair. Keep aiming here and hold fire, even while the weapon cools down.',
                 'turn left':'The closest visible monster is left of center. Turn left to face it.',
                 'turn right':'No monsters are visible, or the closest visible monster is right of center. Turn right to search or face it.',
             })
@@ -33,7 +33,7 @@ def apply_prompt(body, variant='explicit'):
                           'at medium range, far away (nearest first). Break ties by list order. '
                           'Which action faces or shoots that enemy? ' + FEEDBACK),
             criteria={
-                'attack':'The priority enemy is dead center, in the crosshair. Shoot that enemy.',
+                'attack':'The priority enemy is dead center, in the crosshair. Keep aiming here and hold fire, even while the weapon cools down.',
                 'turn left':'The priority enemy is left of center. Turn left to face that enemy.',
                 'turn right':'The priority enemy is right of center, or no enemies are visible. Turn right to face that enemy or search.',
             })

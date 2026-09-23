@@ -4,6 +4,16 @@ from unittest.mock import patch
 from client import Client
 
 class LocalClientTests(unittest.TestCase):
+    def test_attack_describes_holding_fire_without_adding_an_action(self):
+        from decider_prompt import apply_prompt
+        for variant in ('criteria', 'range'):
+            body = {'state': {'weapon_ready': False}, 'questions': {'action': {'type': 'choice'}}}
+            question = apply_prompt(body, variant)['questions']['action']
+            self.assertEqual(list(question['criteria']), ['attack', 'turn left', 'turn right'])
+            attack = question['criteria']['attack']
+            self.assertIn('dead center, in the crosshair', attack)
+            self.assertIn('hold fire, even while the weapon cools down', attack)
+
     def test_range_targets_one_enemy_by_range_without_filtering_state(self):
         from decider_prompt import apply_prompt
         state = {'monsters': [
