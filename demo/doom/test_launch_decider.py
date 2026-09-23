@@ -49,13 +49,14 @@ def test_stop_escalates_only_owned_process():
 
 @pytest.mark.parametrize("startup_error", [False, True])
 @pytest.mark.parametrize("seed", [None, 0, 37])
-def test_run_cleans_up_server(tmp_path, monkeypatch, startup_error, seed):
+@pytest.mark.parametrize("prompt", ["criteria", "range"])
+def test_run_cleans_up_server(tmp_path, monkeypatch, startup_error, seed, prompt):
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
     server, game = Mock(), Mock()
     server.poll.return_value = None
     game.poll.return_value = 0
     game.wait.return_value = 0
-    args = SimpleNamespace(model="2b", port=8000, seed=seed, record=None)
+    args = SimpleNamespace(model="2b", port=8000, seed=seed, record=None, prompt=prompt)
     random_seed = Mock(return_value=12345)
     monkeypatch.setattr(launcher.secrets, "randbelow", random_seed)
     with patch.object(launcher.socket, "socket"), \
@@ -72,7 +73,7 @@ def test_run_cleans_up_server(tmp_path, monkeypatch, startup_error, seed):
             assert launcher.MODELS["2b"][0] in server_command
             assert launcher.MODELS["2b"][1] in server_command
             game_command = popen.call_args_list[1].args[0]
-            assert game_command[game_command.index("--prompt") + 1] == "criteria"
+            assert game_command[game_command.index("--prompt") + 1] == prompt
             assert game_command[game_command.index("--seed") + 1] == str(12345 if seed is None else seed)
         server.terminate.assert_called_once()
         download.assert_called_once_with(*launcher.MODELS["2b"])

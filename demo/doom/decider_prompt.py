@@ -21,6 +21,16 @@ def apply_prompt(body, variant='explicit'):
                 'turn left':'The closest visible monster is left of center. Turn left to face it.',
                 'turn right':'No monsters are visible, or the closest visible monster is right of center. Turn right to search or face it.',
             })
+    elif variant == 'range':
+        question = dict(question,
+            instructions=('Select the priority enemy by range to the player: point blank, close, '
+                          'at medium range, far away (nearest first). Break ties by list order. '
+                          'Which action faces or shoots that enemy? Ignore last_action.'),
+            criteria={
+                'attack':'The priority enemy is dead center, in the crosshair. Shoot that enemy.',
+                'turn left':'The priority enemy is left of center. Turn left to face that enemy.',
+                'turn right':'The priority enemy is right of center, or no enemies are visible. Turn right to face that enemy or search.',
+            })
     elif variant == 'plain':
         question = dict(question,
             instructions='What is the best next action?',

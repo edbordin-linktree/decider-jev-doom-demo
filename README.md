@@ -55,6 +55,7 @@ bash run-decider.sh --model 0.8b          # Smaller 1.41 GiB model; poorer play 
 bash run-decider.sh --seed 47            # Reproducible episode
 bash run-decider.sh --port 8001          # If port 8000 is occupied
 bash run-decider.sh --record run.jsonl   # Save decisions
+bash run-decider.sh --prompt range      # Experimental nearest-by-range policy
 ```
 
 The default is Decider 2B with a random seed in the `defend_the_center` arena.

@@ -106,7 +106,7 @@ def run(args):
                 wait_ready(server, url, model)
                 print("[3/3] Launching Doom in this terminal. The first decision loads the model.", flush=True)
                 command = [sys.executable, str(HERE / "play.py"), "--url", url,
-                           "--api", "systemone", "--prompt", "criteria", "--seed", str(seed)]
+                           "--api", "systemone", "--prompt", args.prompt, "--seed", str(seed)]
                 if args.record:
                     command += ["--record", args.record]
                 game = subprocess.Popen(command)
@@ -124,6 +124,8 @@ def main():
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--seed", type=int, default=None, help="Episode seed (default: random)")
     parser.add_argument("--record", help="Optional JSONL decision log")
+    parser.add_argument("--prompt", choices=["criteria", "range"], default="criteria",
+                        help="Question wording: criteria (default) or experimental nearest-by-range policy")
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         parser.error("port must be between 1 and 65535")

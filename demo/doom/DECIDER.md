@@ -46,13 +46,27 @@ bash run-decider.sh --record run.jsonl
 
 The model sees the same structured state from ViZDoom's labels and depth buffer,
 not raw pixels. We replaced the original long instructions/examples with a plain
-question and described options, matching Decider's typed-question interface:
+question and described options, matching Decider's typed-question interface.
+The default `criteria` prompt asks which action matches the visible monsters.
 
-> Which action best matches the current visible monsters? Use their positions, not last_action.
+### Nearest-by-range experiment
 
-- `attack`: A visible monster is dead center, in the crosshair. Shoot it.
-- `turn left`: The closest visible monster is left of center. Turn left to face it.
-- `turn right`: No monsters are visible, or the closest visible monster is right of center. Turn right to search or face it.
+To test explicit range priority, run `bash run-decider.sh --prompt range`.
+For a controlled comparison, use the same `--seed` with `--prompt criteria` and
+`--prompt range`. The experimental question and options are:
+
+> Select the priority enemy by range to the player: point blank, close, at medium range, far away (nearest first). Break ties by list order. Which action faces or shoots that enemy? Ignore last_action.
+
+- `attack`: The priority enemy is dead center, in the crosshair. Shoot that enemy.
+- `turn left`: The priority enemy is left of center. Turn left to face that enemy.
+- `turn right`: The priority enemy is right of center, or no enemies are visible. Turn right to face that enemy or search.
+
+This nearest-by-range policy is an instruction-following experiment, not an optimal
+combat strategy. Range labels still come from sprite height. Observations, turn
+duration and controls are unchanged; every option now refers to the same target.
+Initial live 2B checks still chose attack over turning toward a point-blank enemy
+when a distant enemy was centred (both left and right cases). Clearer wording
+alone did not enforce the policy; this is opt-in, not a demonstrated improvement.
 
 The model selects the action; these descriptions are not a scripted controller.
 No game-specific training or answer caching is used. The game pauses while each

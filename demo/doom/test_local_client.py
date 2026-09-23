@@ -4,12 +4,27 @@ from unittest.mock import patch
 from client import Client
 
 class LocalClientTests(unittest.TestCase):
+    def test_range_targets_one_enemy_by_range_without_filtering_state(self):
+        from decider_prompt import apply_prompt
+        state = {'monsters': [
+            {'kind': 'chainsaw marine', 'position': 'on the right', 'range': 'point blank'},
+            {'kind': 'pinky demon', 'position': 'dead center, in the crosshair', 'range': 'far away'},
+        ], 'last_action': 'attack'}
+        body = {'state': state, 'questions': {'action': {'type': 'choice'}}}
+        result = apply_prompt(body, 'range')
+        question = result['questions']['action']
+        self.assertIs(result['state'], state)
+        self.assertIn('range to the player: point blank, close, at medium range, far away', question['instructions'])
+        for description in question['criteria'].values():
+            self.assertIn('priority enemy', description)
+        self.assertIn('no enemies are visible', question['criteria']['turn right'])
+
     def test_prompt_variants_preserve_state_and_action_names(self):
         from decider_prompt import apply_prompt
         body={'model':'decider-0.8b','state':{'monsters':[]},'questions':{'action':{
             'type':'choice','instructions':'Original','criteria':{
                 'attack':'fire','turn left':'rotate left','turn right':'rotate right'}}}}
-        for variant in ('explicit','criteria','plain'):
+        for variant in ('explicit','criteria','plain','range'):
             result=apply_prompt(body,variant)
             self.assertEqual(result['state'],body['state'])
             self.assertEqual(result['model'],body['model'])

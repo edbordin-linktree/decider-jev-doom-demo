@@ -125,7 +125,7 @@ def main() -> None:
                     help="score: native /score endpoint. systemone: TypeSafe /v1/systemone choice question")
     ap.add_argument("--api-key", default=None, help="bearer token for /v1/systemone (default: $OPENJEV_API_KEY)")
     ap.add_argument("--model", default=None, help="model identifier for /v1/systemone")
-    ap.add_argument("--prompt", choices=["original", "criteria", "plain"], default="original",
+    ap.add_argument("--prompt", choices=["original", "criteria", "plain", "range"], default="original",
                     help="optional defend_the_center question/option wording; state is unchanged")
     ap.add_argument("--norm", default="mean", choices=["mean", "sum", "pmi"], help="/score normalisation")
     ap.add_argument("--frame-skip", type=int, default=5, help="game tics each chosen action is held for")
