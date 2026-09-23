@@ -1,5 +1,9 @@
 # Decider Jev Doom demo
 
+[Decider MLX fork](https://github.com/edbordin-linktree/decider) ·
+[Hugging Face: 2B model card (default)](https://huggingface.co/edbordin-linktree/decider-2b-executorch-mlx) ·
+[Hugging Face: 0.8B model card](https://huggingface.co/edbordin-linktree/decider-0.8b-executorch-mlx)
+
 Watch Decider 2B play Doom in your terminal, running locally on an Apple Silicon
 Mac through the ExecuTorch MLX backend. No API key, model export or fine-tuning
 is needed.
