@@ -19,9 +19,12 @@ readiness, and launches Doom in your terminal. Quitting stops the server it
 started. It refuses an occupied port or a second launcher instance.
 
 The first run downloads Python dependencies and the public 3.51 GiB 2B model.
-Models are cached by Hugging Face; later runs reuse them. The first decision
-loads the model into memory and is slower than subsequent decisions. Download
-and server progress are in `~/.cache/decider-doom/server.log` (or under
+Models are cached by Hugging Face; later runs reuse them. Download progress is
+shown in the launching terminal, before the server starts. Ctrl+C cancels the
+download without leaving a server behind. The server then uses the cache offline.
+The first decision
+loads the model into memory and is slower than subsequent decisions. Server
+logs are in `~/.cache/decider-doom/server.log` (or under
 `$XDG_CACHE_HOME` if set). Use `tail -f` in another terminal while waiting.
 
 Run one model at a time: quit other inference or export processes first. The

@@ -59,6 +59,7 @@ def test_run_cleans_up_server(tmp_path, monkeypatch, startup_error, seed):
     random_seed = Mock(return_value=12345)
     monkeypatch.setattr(launcher.secrets, "randbelow", random_seed)
     with patch.object(launcher.socket, "socket"), \
+         patch.object(launcher, "download_model") as download, \
          patch.object(launcher.subprocess, "Popen", side_effect=[server, game]) as popen, \
          patch.object(launcher, "wait_ready", side_effect=RuntimeError("startup") if startup_error else None):
         if startup_error:
@@ -74,10 +75,49 @@ def test_run_cleans_up_server(tmp_path, monkeypatch, startup_error, seed):
             assert game_command[game_command.index("--prompt") + 1] == "criteria"
             assert game_command[game_command.index("--seed") + 1] == str(12345 if seed is None else seed)
         server.terminate.assert_called_once()
+        download.assert_called_once_with(*launcher.MODELS["2b"])
+        server_env = popen.call_args_list[0].kwargs["env"]
+        assert server_env["HF_HUB_OFFLINE"] == "1"
+        assert server_env["PYTHONUNBUFFERED"] == "1"
         if seed is None:
             random_seed.assert_called_once_with(2**31)
         else:
             random_seed.assert_not_called()
+
+
+@pytest.mark.parametrize("error", [KeyboardInterrupt(), RuntimeError("download failed")])
+def test_download_failure_never_starts_server(tmp_path, monkeypatch, error):
+    monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
+    args = SimpleNamespace(model="2b", port=8000, seed=37, record=None)
+    with patch.object(launcher.socket, "socket"), \
+         patch.object(launcher, "download_model", side_effect=error), \
+         patch.object(launcher.subprocess, "Popen") as popen:
+        with pytest.raises(type(error)):
+            launcher.run(args)
+        popen.assert_not_called()
+    with launcher.single_instance(tmp_path / "decider-doom" / "launcher.lock"):
+        pass
+
+
+@pytest.mark.parametrize("result", [0, 1, KeyboardInterrupt()])
+def test_foreground_download_progress_and_cleanup(result):
+    process = Mock()
+    process.poll.return_value = None
+    process.wait.side_effect = [result, 0]
+    with patch.object(launcher.subprocess, "Popen", return_value=process) as popen:
+        if isinstance(result, KeyboardInterrupt):
+            with pytest.raises(KeyboardInterrupt):
+                launcher.download_model("owner/model", "revision")
+        elif result:
+            with pytest.raises(RuntimeError, match="download failed"):
+                launcher.download_model("owner/model", "revision")
+        else:
+            launcher.download_model("owner/model", "revision")
+        assert popen.call_args.args[0][-2:] == ["owner/model", "revision"]
+        assert "stdout" not in popen.call_args.kwargs
+        assert "stderr" not in popen.call_args.kwargs
+        assert popen.call_args.kwargs["env"]["HF_HUB_DISABLE_PROGRESS_BARS"] == "0"
+        process.terminate.assert_called_once()
 
 
 def test_http_contract_round_trip():

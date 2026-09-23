@@ -23,7 +23,10 @@ The launcher installs dependencies from a locked uv project, downloads the publi
 Press **q** to quit; the launcher also stops its server.
 
 The first run downloads Python dependencies and a **3.51 GiB model**. Later runs
-reuse the Hugging Face cache. The first decision is slower while the model loads.
+reuse the Hugging Face cache. Download progress appears directly in the terminal,
+followed by separate server-starting and game-launching messages. Ctrl+C during
+the download cancels it before any server is started.
+The first decision is slower while the model loads.
 
 Use a large, true-color terminal. Quit other model or export processes first:
 the launcher prevents duplicate instances of this demo, but cannot prevent other
@@ -66,7 +69,9 @@ latency, and the state sent to the model.
 
 ## If startup takes a while
 
-The first download can take several minutes. In another terminal, check progress:
+The first download can take several minutes; watch its progress in the launching
+terminal. Once the download finishes, the server uses the cached model offline.
+If startup stalls at the server stage, check its log in another terminal:
 
 ```sh
 tail -f ~/.cache/decider-doom/server.log

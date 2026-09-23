@@ -50,7 +50,7 @@ def wait_ready(process, url, model, timeout=1800):
         except (urllib.error.URLError, TimeoutError, ValueError):
             pass
         time.sleep(0.5)
-    raise RuntimeError("Server startup timed out; see the log for download progress.")
+    raise RuntimeError("Server startup timed out; see the server log.")
 
 
 def stop(process):
@@ -61,6 +61,21 @@ def stop(process):
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait()
+
+
+def download_model(model, revision):
+    """Keep Hub progress on the terminal and own the cancellable download process."""
+    process = subprocess.Popen([
+        sys.executable, "-u", "-c",
+        "import sys; from huggingface_hub import snapshot_download; "
+        "snapshot_download(repo_id=sys.argv[1], revision=sys.argv[2])",
+        model, revision,
+    ], env={**os.environ, "HF_HUB_DISABLE_PROGRESS_BARS": "0"})
+    try:
+        if process.wait() != 0:
+            raise RuntimeError("Model download failed; see the error above. Run again to retry.")
+    finally:
+        stop(process)
 
 
 def run(args):
@@ -75,17 +90,21 @@ def run(args):
         seed = args.seed if args.seed is not None else secrets.randbelow(2**31)
         url = f"http://127.0.0.1:{args.port}"
         log_path = cache / "server.log"
-        print(f"Loading {model}. First run downloads the model; later runs use the Hub cache.", flush=True)
+        print(f"[1/3] Downloading/checking {model}. Cached files are reused.", flush=True)
         print(f"Server log: {log_path}\nQuit other model processes before continuing.", flush=True)
         print(f"Episode seed: {seed} (replay with --seed {seed})", flush=True)
+        download_model(model, revision)
+        print("[2/3] Starting local server from the cached model...", flush=True)
         with log_path.open("w") as log:
             server = subprocess.Popen([
                 sys.executable, "-m", "decider.serve", "--backend", "mlx",
                 "--model", model, "--revision", revision,
                 "--host", "127.0.0.1", "--port", str(args.port),
-            ], stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            ], stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
+                env={**os.environ, "HF_HUB_OFFLINE": "1", "PYTHONUNBUFFERED": "1"})
             try:
                 wait_ready(server, url, model)
+                print("[3/3] Launching Doom in this terminal. The first decision loads the model.", flush=True)
                 command = [sys.executable, str(HERE / "play.py"), "--url", url,
                            "--api", "systemone", "--prompt", "criteria", "--seed", str(seed)]
                 if args.record:
