@@ -2,7 +2,8 @@
 
 This fork connects Dasein Labs' terminal Doom harness to a local Decider HTTP
 server using precompiled ExecuTorch MLX models. It defaults to the 2B model and
-the `defend_the_center` scenario. No API key, model export or fine-tuning is needed.
+the `defend_the_center` scenario with a random seed. The launcher prints the seed;
+use `--seed NUMBER` to replay that setup. No API key, model export or fine-tuning is needed.
 
 ## Run
 
@@ -73,7 +74,7 @@ uv run --project demo/doom --locked --no-dev python -m decider.serve --backend m
 
 ```sh
 uv run --project demo/doom --locked --no-dev python demo/doom/play.py \
-  --api systemone --prompt criteria --seed 37
+  --api systemone --prompt criteria
 ```
 
 These manual commands do not use the launcher's single-instance lock or cleanup.

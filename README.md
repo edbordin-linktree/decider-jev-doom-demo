@@ -45,12 +45,13 @@ Optional settings:
 
 ```sh
 bash run-decider.sh --model 0.8b          # Smaller 1.41 GiB model; poorer play in our trials
-bash run-decider.sh --seed 47            # Different episode
+bash run-decider.sh --seed 47            # Reproducible episode
 bash run-decider.sh --port 8001          # If port 8000 is occupied
 bash run-decider.sh --record run.jsonl   # Save decisions
 ```
 
-The default is Decider 2B, seed 37, in the `defend_the_center` arena.
+The default is Decider 2B with a random seed in the `defend_the_center` arena.
+The launcher prints the chosen seed; pass it with `--seed` to replay that setup.
 
 ## Controls
 

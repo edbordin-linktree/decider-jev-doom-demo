@@ -7,6 +7,7 @@ import fcntl
 import json
 import os
 from pathlib import Path
+import secrets
 import signal
 import socket
 import subprocess
@@ -71,10 +72,12 @@ def run(args):
             except OSError:
                 raise RuntimeError(f"Port {args.port} is occupied. Stop that server or select --port.") from None
         model, revision = MODELS[args.model]
+        seed = args.seed if args.seed is not None else secrets.randbelow(2**31)
         url = f"http://127.0.0.1:{args.port}"
         log_path = cache / "server.log"
         print(f"Loading {model}. First run downloads the model; later runs use the Hub cache.", flush=True)
         print(f"Server log: {log_path}\nQuit other model processes before continuing.", flush=True)
+        print(f"Episode seed: {seed} (replay with --seed {seed})", flush=True)
         with log_path.open("w") as log:
             server = subprocess.Popen([
                 sys.executable, "-m", "decider.serve", "--backend", "mlx",
@@ -84,7 +87,7 @@ def run(args):
             try:
                 wait_ready(server, url, model)
                 command = [sys.executable, str(HERE / "play.py"), "--url", url,
-                           "--api", "systemone", "--prompt", "criteria", "--seed", str(args.seed)]
+                           "--api", "systemone", "--prompt", "criteria", "--seed", str(seed)]
                 if args.record:
                     command += ["--record", args.record]
                 game = subprocess.Popen(command)
@@ -100,7 +103,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", choices=MODELS, default="2b")
     parser.add_argument("--port", type=int, default=8000)
-    parser.add_argument("--seed", type=int, default=37)
+    parser.add_argument("--seed", type=int, default=None, help="Episode seed (default: random)")
     parser.add_argument("--record", help="Optional JSONL decision log")
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:

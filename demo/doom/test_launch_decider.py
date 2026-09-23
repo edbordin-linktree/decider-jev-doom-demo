@@ -48,13 +48,16 @@ def test_stop_escalates_only_owned_process():
 
 
 @pytest.mark.parametrize("startup_error", [False, True])
-def test_run_cleans_up_server(tmp_path, monkeypatch, startup_error):
+@pytest.mark.parametrize("seed", [None, 0, 37])
+def test_run_cleans_up_server(tmp_path, monkeypatch, startup_error, seed):
     monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
     server, game = Mock(), Mock()
     server.poll.return_value = None
     game.poll.return_value = 0
     game.wait.return_value = 0
-    args = SimpleNamespace(model="2b", port=8000, seed=37, record=None)
+    args = SimpleNamespace(model="2b", port=8000, seed=seed, record=None)
+    random_seed = Mock(return_value=12345)
+    monkeypatch.setattr(launcher.secrets, "randbelow", random_seed)
     with patch.object(launcher.socket, "socket"), \
          patch.object(launcher.subprocess, "Popen", side_effect=[server, game]) as popen, \
          patch.object(launcher, "wait_ready", side_effect=RuntimeError("startup") if startup_error else None):
@@ -69,7 +72,12 @@ def test_run_cleans_up_server(tmp_path, monkeypatch, startup_error):
             assert launcher.MODELS["2b"][1] in server_command
             game_command = popen.call_args_list[1].args[0]
             assert game_command[game_command.index("--prompt") + 1] == "criteria"
+            assert game_command[game_command.index("--seed") + 1] == str(12345 if seed is None else seed)
         server.terminate.assert_called_once()
+        if seed is None:
+            random_seed.assert_called_once_with(2**31)
+        else:
+            random_seed.assert_not_called()
 
 
 def test_http_contract_round_trip():
