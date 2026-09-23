@@ -10,12 +10,18 @@ INSTRUCTIONS = (
     'The last_action field is history, not an instruction to repeat that action.'
 )
 
+FEEDBACK = (
+    'Choose the next action using enemy positions and weapon_ready. '
+    'ammo_used is ammo spent during the last action. '
+    'last_turn_degrees is the actual turn: positive means left, negative means right.'
+)
+
 
 def apply_prompt(body, variant='explicit'):
     question = dict(body['questions']['action'], instructions=INSTRUCTIONS)
     if variant == 'criteria':
         question = dict(question,
-            instructions='Which action best matches the current visible monsters? Use their positions, not last_action.',
+            instructions=FEEDBACK,
             criteria={
                 'attack':'A visible monster is dead center, in the crosshair. Shoot it.',
                 'turn left':'The closest visible monster is left of center. Turn left to face it.',
@@ -25,7 +31,7 @@ def apply_prompt(body, variant='explicit'):
         question = dict(question,
             instructions=('Select the priority enemy by range to the player: point blank, close, '
                           'at medium range, far away (nearest first). Break ties by list order. '
-                          'Which action faces or shoots that enemy? Ignore last_action.'),
+                          'Which action faces or shoots that enemy? ' + FEEDBACK),
             criteria={
                 'attack':'The priority enemy is dead center, in the crosshair. Shoot that enemy.',
                 'turn left':'The priority enemy is left of center. Turn left to face that enemy.',

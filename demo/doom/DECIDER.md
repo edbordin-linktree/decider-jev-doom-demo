@@ -47,7 +47,15 @@ bash run-decider.sh --record run.jsonl
 The model sees the same structured state from ViZDoom's labels and depth buffer,
 not raw pixels. We replaced the original long instructions/examples with a plain
 question and described options, matching Decider's typed-question interface.
-The default `criteria` prompt asks which action matches the visible monsters.
+The default `criteria` prompt says:
+
+> Choose the next action using enemy positions and weapon_ready. ammo_used is ammo spent during the last action. last_turn_degrees is the actual turn: positive means left, negative means right.
+
+`weapon_ready` comes from ViZDoom's attack-readiness signal. `ammo_used` is the
+decrease in selected-weapon ammo over the last step (zero on a weapon switch),
+not a general shot counter: pickups can mask consumption, and melee spends no
+ammo. Turn feedback uses measured heading changes. Both step-feedback fields
+reset each episode. No cooldown duration, automatic firing or aiming rule is added.
 
 ### Nearest-by-range experiment
 
@@ -55,14 +63,16 @@ To test explicit range priority, run `bash run-decider.sh --prompt range`.
 For a controlled comparison, use the same `--seed` with `--prompt criteria` and
 `--prompt range`. The experimental question and options are:
 
-> Select the priority enemy by range to the player: point blank, close, at medium range, far away (nearest first). Break ties by list order. Which action faces or shoots that enemy? Ignore last_action.
+> Select the priority enemy by range to the player: point blank, close, at medium range, far away (nearest first). Break ties by list order. Which action faces or shoots that enemy?
+
+It also includes the feedback instructions above.
 
 - `attack`: The priority enemy is dead center, in the crosshair. Shoot that enemy.
 - `turn left`: The priority enemy is left of center. Turn left to face that enemy.
 - `turn right`: The priority enemy is right of center, or no enemies are visible. Turn right to face that enemy or search.
 
 This nearest-by-range policy is an instruction-following experiment, not an optimal
-combat strategy. Range labels still come from sprite height. Observations, turn
+combat strategy. Range labels still come from sprite height. Target descriptions, turn
 duration and controls are unchanged; every option now refers to the same target.
 Initial live 2B checks still chose attack over turning toward a point-blank enemy
 when a distant enemy was centred (both left and right cases). Clearer wording
@@ -121,7 +131,7 @@ weights or proprietary Doom assets are included in Git.
 ## Development checks
 
 ```sh
-uv run --project demo/doom --locked python -m pytest demo/doom/test_local_client.py demo/doom/test_launch_decider.py
+uv run --project demo/doom --locked python -m pytest demo/doom/test_*.py
 ```
 
 These tests cover prompts, HTTP transport and launcher cleanup without loading a model.

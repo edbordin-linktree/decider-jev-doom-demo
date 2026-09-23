@@ -105,6 +105,9 @@ def state_dict(snap: Snapshot, last_action: str | None) -> dict:
                   "right": depth_words(snap.depth_right)},
         "health": snap.health, "ammo": snap.ammo, "kills": snap.kills,
         "last_action": last_action,
+        "weapon_ready": snap.weapon_ready,
+        "ammo_used": snap.ammo_used,
+        "last_turn_degrees": snap.last_turn_degrees,
     }
 
 

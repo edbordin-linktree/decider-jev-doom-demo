@@ -157,6 +157,9 @@ class Snapshot:
     depth_left: float = 0.0
     depth_center: float = 0.0
     depth_right: float = 0.0
+    weapon_ready: bool = False
+    ammo_used: int = 0
+    last_turn_degrees: float = 0.0
 
 
 class Doom:
@@ -197,19 +200,32 @@ class Doom:
         g.init()
         self.game = g
         self.total_reward = 0.0
+        self.ammo_used = 0
+        self.last_turn_degrees = 0.0
 
     def new_episode(self) -> None:
         self.game.new_episode()
         self.total_reward = 0.0
+        self.ammo_used = 0
+        self.last_turn_degrees = 0.0
 
     @property
     def finished(self) -> bool:
         return self.game.is_episode_finished()
 
     def step(self, action: str, tics: int) -> float:
+        ammo_before = self.game.get_game_variable(vzd.GameVariable.SELECTED_WEAPON_AMMO)
+        weapon_before = self.game.get_game_variable(vzd.GameVariable.SELECTED_WEAPON)
+        angle_before = self.game.get_game_variable(vzd.GameVariable.ANGLE)
         pressed = set(ACTIONS[action])
         vec = [1 if b in pressed else 0 for b in BUTTONS]
         reward = self.game.make_action(vec, tics)
+        ammo_after = self.game.get_game_variable(vzd.GameVariable.SELECTED_WEAPON_AMMO)
+        weapon_after = self.game.get_game_variable(vzd.GameVariable.SELECTED_WEAPON)
+        self.ammo_used = max(0, int(ammo_before - ammo_after)) if weapon_before == weapon_after else 0
+        angle_after = self.game.get_game_variable(vzd.GameVariable.ANGLE)
+        # Doom angles increase when turning left; normalize wraparound at 360.
+        self.last_turn_degrees = round((angle_after - angle_before + 180) % 360 - 180, 1)
         self.total_reward += reward
         return reward
 
@@ -237,6 +253,8 @@ class Doom:
         d = s.depth_buffer
         band = d[H // 3: 2 * H // 3]
         snap = Snapshot(frame=frame, health=hp, ammo=max(ammo, 0), kills=kills, tic=self.game.get_episode_time(),
+                        weapon_ready=bool(self.game.get_game_variable(vzd.GameVariable.ATTACK_READY)),
+                        ammo_used=self.ammo_used, last_turn_degrees=self.last_turn_degrees,
                         things=things,
                         depth_left=float(np.median(band[:, : W // 5])),
                         depth_center=float(np.median(band[:, W * 2 // 5: W * 3 // 5])),
